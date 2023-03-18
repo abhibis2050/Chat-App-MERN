@@ -85,6 +85,7 @@ const SideDrawer = () => {
   };
 
   const accessChat = async (userId) => {
+    console.log(userId);
     try {
       setLoadingChat(true);
       const config = {
@@ -93,14 +94,15 @@ const SideDrawer = () => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.get(
+      const response = await axios.post(
         "http://localhost:5000/api/chat",
-        config,
-        { userId }
+        { userId },
+        config
       );
-
+      const data = response.data;
       if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-      
+
+      console.log(data);
       setSelectedChat(data);
       setLoadingChat(false);
       onClose();
@@ -188,7 +190,7 @@ const SideDrawer = () => {
                 />
               ))
             )}
-            {loadingChat && <Spinner ml="auto" d="flex" />}
+            {loadingChat && <Spinner ml="auto" display="flex" />}
           </DrawerBody>
         </DrawerContent>
       </Drawer>

@@ -16,7 +16,7 @@ const ChatProvider = ({children})=>{
       setUser(userInfo)
 
       if(!userInfo){
-        window.location.href="/"
+        // window.location.href="/"
       }
     },[])
     return (

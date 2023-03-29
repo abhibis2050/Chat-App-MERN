@@ -22,18 +22,54 @@ import { ChatState } from "../../Context/ChatProvider";
 import UserBadgeItem from "../userAVatar/UserBadgeItem";
 import UserListItem from "../userAVatar/UserListItem";
 
-const UpdateGroupChatModal = () => {
+const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [groupChatName, setGroupChatName] = useState();
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [renameloading, setRenameloading] = useState(false);
+  const [renameloading, setRenameLoading] = useState(false);
   const toast = useToast();
   const { selectedChat, setSelectedChat, user } = ChatState();
-  
+
   const handleRemove = () => {};
-  const handleRename = () => {};
+const handleRename = async () => {
+    if (!groupChatName) return;
+
+    try {
+      setRenameLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.patch(
+        `http://localhost:5000/api/chat/rename`,
+        {
+          chatId: selectedChat._id,
+          chatName: groupChatName,
+        },
+        config
+      );
+
+      console.log(data._id);
+      // setSelectedChat("");
+      setSelectedChat(data);
+      setFetchAgain(!fetchAgain);
+      setRenameLoading(false);
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: error.response.data.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+      setRenameLoading(false);
+    }
+    setGroupChatName("");
+  };
   const handleSearch = () => {};
   return (
     <div>

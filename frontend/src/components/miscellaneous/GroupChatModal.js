@@ -17,19 +17,126 @@ import {
 import axios from "axios";
 import { useState } from "react";
 import { ChatState } from "../../Context/ChatProvider";
+import UserListItem from "../userAVatar/UserListItem";
+import UserBadgeItem from "../userAVatar/UserBadgeItem";
 
 const GroupChatModal = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [groupChatName, setGroupChatName] = useState();
   const [selectedUser, setSelectedUser] = useState([]);
   const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const { user, chats, setChatState } = ChatState();
-  const handleSearch = () => {
-    
+  const { user, chats, setChats } = ChatState();
+
+  const handleSearch = async (query) => {
+    setSearch(query);
+    if (!query) {
+      return;
+    }
+    try {
+      setLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.get(
+        `http://localhost:5000/api/user?search=${search}`,
+        config
+      );
+
+      setLoading(false);
+      setSearchResult(data);
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: "Failed to Load the Search Results",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
+  };
+  const handleSubmit = async () => {
+    if (!groupChatName || !selectedUser) {
+      toast({
+        title: "Please fill all the feilds",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    try {
+      console.log(
+        selectedUser.map((u) => {
+          return u._id;
+        })
+      );
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.post(
+        `http://localhost:5000/api/chat/group`,
+
+        {
+          name: groupChatName,
+          users: JSON.stringify(
+            selectedUser.map((u) => {
+              return u._id;
+            })
+          ),
+        },
+        config
+      );
+
+      console.log(data);
+
+      setChats([data, ...chats]);
+      onClose();
+      toast({
+        title: "New Group Chat Created!",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Create the Chat!",
+        description: error.response.data.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+    }
+  };
+  const handleGroup = (userToAdd) => {
+    if (selectedUser.includes(userToAdd)) {
+      toast({
+        title: "User already added",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    setSelectedUser([...selectedUser, userToAdd]);
+  };
+
+  const handleDelete = (delUser) => {
+    setSelectedUser(selectedUser.filter((sel) => sel._id !== delUser._id));
   };
   return (
     <>
@@ -62,13 +169,35 @@ const GroupChatModal = ({ children }) => {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </FormControl>
+            <Box w="100%" display="flex" flexWrap="wrap">
+              {selectedUser.map((u) => (
+                <UserBadgeItem
+                  key={u._id}
+                  user={u}
+                  handleFunction={() => handleDelete(u)}
+                />
+              ))}
+            </Box>
+
+            {loading ? (
+              <div>loading...</div>
+            ) : (
+              searchResult
+                ?.slice(0, 4)
+                .map((user) => (
+                  <UserListItem
+                    key={user.Id}
+                    user={user}
+                    handleFunction={() => handleGroup(user)}
+                  />
+                ))
+            )}
           </ModalBody>
 
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
-              Close
+            <Button colorScheme="blue" onClick={handleSubmit}>
+              Create Chat
             </Button>
-            <Button variant="ghost">Secondary Action</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

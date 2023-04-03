@@ -96,7 +96,7 @@ exports.createGroupChat = async (req, res) => {
     }
     // console.log(req.user);
 
-
+    // http://localhost:5000
     const groupChat = await Chat.create({
       chatName: req.body.name,
       users: usersArr,
